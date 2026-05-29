@@ -1,0 +1,23 @@
+{
+  "active_plan": "/Users/liuchang/Desktop/project/note_ai/.sisyphus/plans/persistence-and-ui-improvement.md",
+  "started_at": "2026-05-28T06:19:58.802Z",
+  "session_ids": [
+    "ses_19c0ec6ebffeWnJIempppNWuck"
+  ],
+  "session_origins": {
+    "ses_19c0ec6ebffeWnJIempppNWuck": "direct"
+  },
+  "plan_name": "persistence-and-ui-improvement",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Database Integration — Auto-Save + Load-on-Startup + Manual Save",
+      "session_id": "ses_1922465e5ffe17UH1vqEnIAQK1",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "updated_at": "2026-05-28T09:42:50.279Z"
+    }
+  }
+}

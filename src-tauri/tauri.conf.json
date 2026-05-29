@@ -1,0 +1,60 @@
+{
+  "productName": "AI Novel Agent",
+  "version": "0.1.0",
+  "identifier": "com.novel-agent.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AI Novel Agent",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "AI-powered novel writing assistant",
+    "longDescription": "A desktop application that helps authors write novels with AI assistance including RAG context retrieval, multi-provider LLM chat, and rich text editing.",
+    "copyright": "Copyright 2026",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": ""
+    }
+  },
+  "plugins": {
+    "sql": {
+      "preload": {
+        "db": "sqlite:ai_novel_agent.db"
+      }
+    },
+    "fs": {
+      "scope": {
+        "allow": ["$APPDATA/**"],
+        "deny": []
+      }
+    }
+  }
+}

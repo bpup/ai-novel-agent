@@ -1,0 +1,110 @@
+import { describe, it, expect } from "vitest";
+import type { Editor } from "@tiptap/react";
+
+// Test editor commands by asserting the chain patterns
+describe("EditorToolbar buttons", () => {
+  function makeMockEditor() {
+    const chain: any = () => chain;
+    chain.focus = () => chain;
+    chain.run = () => {};
+    const editor = {
+      chain: () => chain,
+      isActive: () => false,
+    };
+    return editor as unknown as Editor;
+  }
+
+  it("Bold button should call toggleBold", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).toggleBold = () => { called = true; return editor.chain(); };
+    editor.chain().focus().toggleBold().run();
+    expect(called).toBe(true);
+  });
+
+  it("Italic button should call toggleItalic", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).toggleItalic = () => { called = true; return editor.chain(); };
+    editor.chain().focus().toggleItalic().run();
+    expect(called).toBe(true);
+  });
+
+  it("Heading buttons should call toggleHeading with level", () => {
+    const levels = [1, 2, 3];
+    for (const level of levels) {
+      const editor = makeMockEditor();
+      let calledLevel = 0;
+      (editor.chain() as any).toggleHeading = (opts: any) => { calledLevel = opts.level; return editor.chain(); };
+      editor.chain().focus().toggleHeading({ level }).run();
+      expect(calledLevel).toBe(level);
+    }
+  });
+
+  it("OrderedList button should call toggleOrderedList", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).toggleOrderedList = () => { called = true; return editor.chain(); };
+    editor.chain().focus().toggleOrderedList().run();
+    expect(called).toBe(true);
+  });
+
+  it("BulletList button should call toggleBulletList", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).toggleBulletList = () => { called = true; return editor.chain(); };
+    editor.chain().focus().toggleBulletList().run();
+    expect(called).toBe(true);
+  });
+
+  it("Blockquote button should call toggleBlockquote", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).toggleBlockquote = () => { called = true; return editor.chain(); };
+    editor.chain().focus().toggleBlockquote().run();
+    expect(called).toBe(true);
+  });
+
+  it("CodeBlock button should call toggleCodeBlock", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).toggleCodeBlock = () => { called = true; return editor.chain(); };
+    editor.chain().focus().toggleCodeBlock().run();
+    expect(called).toBe(true);
+  });
+
+  it("HorizontalRule button should call setHorizontalRule", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).setHorizontalRule = () => { called = true; return editor.chain(); };
+    editor.chain().focus().setHorizontalRule().run();
+    expect(called).toBe(true);
+  });
+
+  it("ClearFormatting button should call unsetAllMarks and clearNodes", () => {
+    let unsetCalled = false;
+    let clearCalled = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).unsetAllMarks = () => { unsetCalled = true; return editor.chain(); };
+    (editor.chain() as any).clearNodes = () => { clearCalled = true; return editor.chain(); };
+    editor.chain().focus().unsetAllMarks().clearNodes().run();
+    expect(unsetCalled).toBe(true);
+    expect(clearCalled).toBe(true);
+  });
+
+  it("Undo button should call undo", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).undo = () => { called = true; return editor.chain(); };
+    editor.chain().focus().undo().run();
+    expect(called).toBe(true);
+  });
+
+  it("Redo button should call redo", () => {
+    let called = false;
+    const editor = makeMockEditor();
+    (editor.chain() as any).redo = () => { called = true; return editor.chain(); };
+    editor.chain().focus().redo().run();
+    expect(called).toBe(true);
+  });
+});

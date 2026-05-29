@@ -1,0 +1,9 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for the AI Novel Agent app",
+  "windows": ["main"],
+  "permissions": [
+    "sql:default",
+    "fs:default"
+  ]
+}

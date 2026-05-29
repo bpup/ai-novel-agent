@@ -1,0 +1,519 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   INK & VELLUM — Design Tokens
+   A literary dark aesthetic for a serious writing tool.
+   ========================================================================== */
+
+@theme {
+  /* ── Backgrounds ── */
+  --color-ink-bg: #1a1612;
+  --color-ink-surface: #241f1a;
+  --color-ink-surface-raised: #2d2721;
+  --color-ink-surface-hover: #322b24;
+  --color-ink-border: #3d3730;
+  --color-ink-border-focus: #7a6a4f;
+
+  /* ── Paper (editor surface) ── */
+  --color-paper-bg: #f5efe0;
+  --color-paper-bg-off: #ede7d5;
+  --color-paper-text: #3d3226;
+  --color-paper-text-dim: #8a7d6e;
+  --color-paper-border: #d4cfc4;
+
+  /* ── Text ── */
+  --color-ink-text: #e8dcc8;
+  --color-ink-text-dim: #9d9484;
+  --color-ink-text-subtle: #6b6356;
+
+  /* ── Accents ── */
+  --color-amber: #c4953b;
+  --color-amber-hover: #d4a84e;
+  --color-amber-dim: #8a6a30;
+  --color-amber-subtle: rgba(196, 149, 59, 0.12);
+
+  --color-sage: #6b8a7a;
+  --color-sage-hover: #7d9e8c;
+  --color-sage-subtle: rgba(107, 138, 122, 0.12);
+
+  /* ── Semantic ── */
+  --color-success: #5a8f6c;
+  --color-success-bg: rgba(90, 143, 108, 0.12);
+  --color-warning: #c4943b;
+  --color-warning-bg: rgba(196, 148, 59, 0.12);
+  --color-error: #b55a4d;
+  --color-error-bg: rgba(181, 90, 77, 0.12);
+
+  /* ── Typography ── */
+  --font-family-display: "Playfair Display", "Georgia", "Times New Roman", serif;
+  --font-family-body: "Crimson Text", "Georgia", "Times New Roman", serif;
+  --font-family-ui: "DM Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-family-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
+
+  /* ── Radii ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ── Shadows ── */
+  --shadow-ink-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-ink-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-ink-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-ink-glow: 0 0 20px rgba(196, 149, 59, 0.15);
+
+  /* ── Easing ── */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root {
+  /* ── Backgrounds ── */
+  --ink-bg: #1a1612;
+  --ink-surface: #241f1a;
+  --ink-surface-raised: #2d2721;
+  --ink-surface-hover: #322b24;
+  --ink-border: #3d3730;
+  --ink-border-focus: #7a6a4f;
+
+  /* ── Paper (editor surface) ── */
+  --paper-bg: #f5efe0;
+  --paper-bg-off: #ede7d5;
+  --paper-text: #3d3226;
+  --paper-text-dim: #8a7d6e;
+  --paper-border: #d4cfc4;
+
+  /* ── Text ── */
+  --ink-text: #e8dcc8;
+  --ink-text-dim: #9d9484;
+  --ink-text-subtle: #6b6356;
+
+  /* ── Accents ── */
+  --amber: #c4953b;
+  --amber-hover: #d4a84e;
+  --amber-dim: #8a6a30;
+  --amber-subtle: rgba(196, 149, 59, 0.12);
+
+  --sage: #6b8a7a;
+  --sage-hover: #7d9e8c;
+  --sage-subtle: rgba(107, 138, 122, 0.12);
+
+  /* ── Semantic ── */
+  --success: #5a8f6c;
+  --success-bg: rgba(90, 143, 108, 0.12);
+  --warning: #c4943b;
+  --warning-bg: rgba(196, 148, 59, 0.12);
+  --error: #b55a4d;
+  --error-bg: rgba(181, 90, 77, 0.12);
+
+  /* ── Typography ── */
+  --font-display: "Playfair Display", "Georgia", "Times New Roman", serif;
+  --font-body: "Crimson Text", "Georgia", "Times New Roman", serif;
+  --font-ui: "DM Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
+
+  /* ── Spacing ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* ── Radii ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ── Transitions ── */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 20px rgba(196, 149, 59, 0.15);
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-text);
+  background-color: var(--ink-bg);
+}
+
+/* ── Selection styling ── */
+::selection {
+  background: var(--amber-dim);
+  color: var(--ink-text);
+}
+
+/* ==========================================================================
+   GRAIN TEXTURE OVERLAY
+   ========================================================================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ==========================================================================
+   SCROLLBAR — matched to the ink aesthetic
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-text-subtle);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-border) transparent;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY UTILITY CLASSES
+   ========================================================================== */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   FOCUS RING — amber glow instead of browser default blue
+   ========================================================================== */
+
+*:focus-visible {
+  outline: 2px solid var(--amber-dim);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   PROSE STYLES — for Tiptap editor content
+   ========================================================================== */
+
+.ProseMirror {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: var(--ink-text);
+  caret-color: var(--amber);
+  min-height: 100%;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--ink-text-subtle);
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+.ProseMirror h1 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.5em 0 0.5em;
+  color: var(--amber);
+}
+
+.ProseMirror h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1.3em 0 0.4em;
+  color: var(--ink-text);
+}
+
+.ProseMirror h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 1em 0 0.3em;
+  color: var(--ink-text);
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--ink-border);
+  margin: 2em 0;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid var(--amber-dim);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--ink-text-dim);
+  font-style: italic;
+}
+
+.ProseMirror strong {
+  font-weight: 600;
+  color: var(--ink-text);
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--ink-surface-raised);
+  color: var(--amber);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+}
+
+.ProseMirror pre {
+  font-family: var(--font-mono);
+  background: var(--ink-surface);
+  color: var(--ink-text);
+  padding: 1em;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+}
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+/* Staggered reveal for page elements */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ink-spread {
+  from {
+    box-shadow: 0 0 0 0 var(--amber-subtle);
+  }
+  to {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(196, 149, 59, 0.1); }
+  50% { box-shadow: 0 0 16px rgba(196, 149, 59, 0.25); }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* Ghost text cursor flicker */
+@keyframes ghost-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.65; }
+}
+
+/* Scale-in entrance for dropdowns */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Slide-down entrance for toolbars */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s var(--ease-out-expo) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s var(--ease-out-expo) both;
+}
+
+.animate-ink {
+  animation: ink-spread 0.8s var(--ease-out-expo);
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.15s var(--ease-out-expo) both;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.15s var(--ease-out-expo) both;
+}
+
+/* ==========================================================================
+   GHOST TEXT WIDGET
+   ========================================================================== */
+
+.ghost-text-widget {
+  color: var(--ink-text-dim);
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  animation: ghost-pulse 1.5s ease-in-out infinite;
+}
+
+/* Stagger delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* ==========================================================================
+   UTILITY CLASSES EXTENDING TAILWIND
+   ========================================================================== */
+
+.ink-border {
+  border-color: var(--ink-border);
+}
+
+.ink-text {
+  color: var(--ink-text);
+}
+
+.ink-text-dim {
+  color: var(--ink-text-dim);
+}
+
+.ink-bg {
+  background-color: var(--ink-bg);
+}
+
+.ink-surface {
+  background-color: var(--ink-surface);
+}
+
+.ink-surface-raised {
+  background-color: var(--ink-surface-raised);
+}
+
+.paper-bg {
+  background-color: var(--paper-bg);
+}
+
+.paper-text {
+  color: var(--paper-text);
+}
+
+.amber-accent {
+  color: var(--amber);
+}
+
+.amber-bg-subtle {
+  background-color: var(--amber-subtle);
+}
+
+.vertical-rl {
+  writing-mode: vertical-rl;
+}
+
+.transition-ink {
+  transition: all 0.25s var(--ease-out-expo);
+}
+
+.transition-spring {
+  transition: all 0.3s var(--ease-spring);
+}

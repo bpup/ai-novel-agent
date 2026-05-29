@@ -1,0 +1,5 @@
+Compiling tauri-plugin-sql v2.4.0
+Compiling tauri-plugin-fs v2.5.1
+Compiling ai-novel-agent v0.1.0
+Finished dev profile [unoptimized + debuginfo] target(s) in 4m 06s
+Exit code: 0
