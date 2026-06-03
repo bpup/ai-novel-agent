@@ -1,4 +1,4 @@
-import type { ChatMessage } from "../../types/llm";
+import type { ChatMessage, StreamEvent } from "../../types/llm";
 import type { SearchResult } from "../../types/rag";
 import type { SkillMode } from "../../types/skill";
 import { chatService } from "../llm/chat";
@@ -116,6 +116,7 @@ export class AIOrchestrator {
     projectId: string,
     query: string,
     mode?: SkillMode,
+    additionalContext?: string,
   ): Promise<string> {
     const skill = skillManager.getSkillForProject(projectId);
     let stylePrompt: string;
@@ -132,16 +133,21 @@ export class AIOrchestrator {
     }
 
     const ragContext = await this.buildRAGContext(projectId, query);
-    return stylePrompt + ragContext;
+    const parts = [stylePrompt, ragContext];
+    if (additionalContext) {
+      parts.push(`\n\n## 用户指定的上下文\n${additionalContext}`);
+    }
+    return parts.join("");
   }
 
   async chat(
     projectId: string,
     userMessage: string,
+    additionalContext?: string,
   ): Promise<string> {
     const history = this.getOrCreateHistory(projectId);
     const llmHistory = this.convertHistoryForLLM(history);
-    const context = await this.buildContext(projectId, userMessage);
+    const context = await this.buildContext(projectId, userMessage, undefined, additionalContext);
 
     const response = await chatService.sendMessage(
       userMessage,
@@ -156,22 +162,33 @@ export class AIOrchestrator {
   async *streamChat(
     projectId: string,
     userMessage: string,
-  ): AsyncGenerator<string> {
+    additionalContext?: string,
+  ): AsyncGenerator<StreamEvent> {
     const history = this.getOrCreateHistory(projectId);
     const llmHistory = this.convertHistoryForLLM(history);
-    const context = await this.buildContext(projectId, userMessage);
+
+    yield { type: "thinking", text: "正在分析写作上下文..." };
+    const context = await this.buildContext(projectId, userMessage, undefined, additionalContext);
+
+    yield { type: "thinking", text: "正在生成回复..." };
 
     let fullResponse = "";
-    for await (const chunk of chatService.streamMessage(
-      userMessage,
-      llmHistory,
-      context,
-    )) {
-      fullResponse += chunk;
-      yield chunk;
-    }
+    try {
+      for await (const chunk of chatService.streamMessage(
+        userMessage,
+        llmHistory,
+        context,
+      )) {
+        fullResponse += chunk;
+        yield { type: "token", text: chunk };
+      }
 
-    this.addToHistory(projectId, userMessage, fullResponse);
+      this.addToHistory(projectId, userMessage, fullResponse);
+      yield { type: "done", fullText: fullResponse };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "未知错误";
+      yield { type: "error", message, retryable: true };
+    }
   }
 
   async continueWriting(

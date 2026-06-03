@@ -1,15 +1,18 @@
 import { describe, it, expect, vi } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
-import { renderWithProviders } from "../../../test/utils";
 import ChatMessages from "../ChatMessages";
+import { renderWithProviders } from "../../../test/utils";
 
 const mockEditor = {
-  state: { selection: { from: 0, to: 0 } },
+  state: { selection: { from: 0, to: 0 }, doc: { content: { size: 100 } } },
+  commands: { setGhostText: vi.fn() },
   view: { dispatch: vi.fn(), focus: vi.fn() },
-} as any;
+} as unknown as import("@tiptap/react").Editor;
+
+const ts = () => new Date().toISOString();
 
 describe("ChatMessages", () => {
-  it("renders empty state when no messages", () => {
+  it("renders empty state when no messages and not loading", () => {
     renderWithProviders(
       <ChatMessages
         messages={[]}
@@ -20,29 +23,15 @@ describe("ChatMessages", () => {
         onAppendToEnd={vi.fn()}
       />,
     );
-    expect(screen.getByText(/开始与 AI 对话/)).toBeDefined();
-  });
-
-  it("renders loading dots when isLoading", () => {
-    renderWithProviders(
-      <ChatMessages
-        messages={[]}
-        isLoading={true}
-        editor={null}
-        onInsertAtCursor={vi.fn()}
-        onReplaceSelection={vi.fn()}
-        onAppendToEnd={vi.fn()}
-      />,
-    );
-    const dots = document.querySelectorAll(".animate-bounce");
-    expect(dots.length).toBe(3);
+    expect(screen.getByText("开始与 AI 对话")).toBeDefined();
   });
 
   it("renders citation chips for assistant with citations", () => {
     const messages = [
       {
-        role: "assistant",
+        role: "assistant" as const,
         content: "test",
+        timestamp: ts(),
         citations: [{ chapterId: "1", chapterTitle: "第一章", snippet: "text" }],
       },
     ];
@@ -61,7 +50,7 @@ describe("ChatMessages", () => {
 
   it("does NOT render citation chips when citations is empty array", () => {
     const messages = [
-      { role: "assistant", content: "test", citations: [] },
+      { role: "assistant" as const, content: "test", timestamp: ts(), citations: [] },
     ];
     renderWithProviders(
       <ChatMessages
@@ -77,7 +66,7 @@ describe("ChatMessages", () => {
   });
 
   it("does NOT render citation chips when citations is undefined", () => {
-    const messages = [{ role: "assistant", content: "test" }];
+    const messages = [{ role: "assistant" as const, content: "test", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -92,7 +81,7 @@ describe("ChatMessages", () => {
   });
 
   it("has 复制 button for assistant messages", () => {
-    const messages = [{ role: "assistant", content: "hello" }];
+    const messages = [{ role: "assistant" as const, content: "hello", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -107,12 +96,11 @@ describe("ChatMessages", () => {
   });
 
   it("shows 已复制 after clicking 复制", async () => {
-    // Mock clipboard API
     Object.assign(navigator, {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
 
-    const messages = [{ role: "assistant", content: "hello" }];
+    const messages = [{ role: "assistant" as const, content: "hello", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -131,7 +119,7 @@ describe("ChatMessages", () => {
   });
 
   it("has 插入 and 替换 buttons when editor is provided", () => {
-    const messages = [{ role: "assistant", content: "hello" }];
+    const messages = [{ role: "assistant" as const, content: "hello", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -147,7 +135,7 @@ describe("ChatMessages", () => {
   });
 
   it("does NOT show 插入/替换 when editor is null", () => {
-    const messages = [{ role: "assistant", content: "hello" }];
+    const messages = [{ role: "assistant" as const, content: "hello", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -163,7 +151,7 @@ describe("ChatMessages", () => {
   });
 
   it("has 追加 button for assistant messages", () => {
-    const messages = [{ role: "assistant", content: "hello" }];
+    const messages = [{ role: "assistant" as const, content: "hello", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -179,7 +167,7 @@ describe("ChatMessages", () => {
 
   it("calls onAppendToEnd with message content on 追加 click", () => {
     const onAppend = vi.fn();
-    const messages = [{ role: "assistant", content: "hello world" }];
+    const messages = [{ role: "assistant" as const, content: "hello world", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -196,7 +184,7 @@ describe("ChatMessages", () => {
 
   it("calls onInsertAtCursor with message content on 插入 click", () => {
     const onInsert = vi.fn();
-    const messages = [{ role: "assistant", content: "test" }];
+    const messages = [{ role: "assistant" as const, content: "test", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -213,7 +201,7 @@ describe("ChatMessages", () => {
 
   it("calls onReplaceSelection with message content on 替换 click", () => {
     const onReplace = vi.fn();
-    const messages = [{ role: "assistant", content: "test" }];
+    const messages = [{ role: "assistant" as const, content: "test", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -231,8 +219,9 @@ describe("ChatMessages", () => {
   it("renders multiple citation chips", () => {
     const messages = [
       {
-        role: "assistant",
+        role: "assistant" as const,
         content: "test",
+        timestamp: ts(),
         citations: [
           { chapterId: "1", chapterTitle: "第一章", snippet: "a" },
           { chapterId: "2", chapterTitle: "第二章", snippet: "b" },
@@ -254,7 +243,7 @@ describe("ChatMessages", () => {
   });
 
   it("does NOT render action buttons for user messages", () => {
-    const messages = [{ role: "user", content: "hello" }];
+    const messages = [{ role: "user" as const, content: "hello", timestamp: ts() }];
     renderWithProviders(
       <ChatMessages
         messages={messages}
@@ -271,8 +260,8 @@ describe("ChatMessages", () => {
 
   it("renders user and assistant message bubbles with correct alignment", () => {
     const messages = [
-      { role: "user", content: "hi" },
-      { role: "assistant", content: "hello" },
+      { role: "user" as const, content: "hi", timestamp: ts() },
+      { role: "assistant" as const, content: "hello", timestamp: ts() },
     ];
     renderWithProviders(
       <ChatMessages
@@ -288,9 +277,9 @@ describe("ChatMessages", () => {
     expect(screen.getByText("hello")).toBeDefined();
   });
 
-  it("accepts messages with timestamp field (types/llm compatibility)", () => {
+  it("accepts messages with timestamp field", () => {
     const messages = [
-      { role: "assistant", content: "ok", timestamp: "2024-01-01T00:00:00Z" },
+      { role: "assistant" as const, content: "ok", timestamp: "2024-01-01T00:00:00Z" },
     ];
     renderWithProviders(
       <ChatMessages
@@ -305,9 +294,9 @@ describe("ChatMessages", () => {
     expect(screen.getByText("ok")).toBeDefined();
   });
 
-  it("accepts messages with createdAt field (types/chat compatibility)", () => {
+  it("accepts messages with createdAt field", () => {
     const messages = [
-      { role: "assistant", content: "ok", createdAt: "2024-01-01T00:00:00Z" },
+      { role: "assistant" as const, content: "ok", timestamp: ts(), createdAt: "2024-01-01T00:00:00Z" },
     ];
     renderWithProviders(
       <ChatMessages

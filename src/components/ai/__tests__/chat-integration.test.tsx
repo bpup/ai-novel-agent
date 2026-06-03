@@ -89,8 +89,10 @@ function openAIPanel() {
 
 async function* makeChatStream(chunks: string[]) {
   for (const chunk of chunks) {
-    yield chunk;
+    yield { type: "token" as const, text: chunk };
+    await new Promise((r) => setTimeout(r, 0));
   }
+  yield { type: "done" as const, fullText: chunks.join("") };
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -141,6 +143,7 @@ describe("Chat Integration Flow", () => {
     expect(mockStreamChat).toHaveBeenCalledWith(
       "test-project",
       "Hi there",
+      expect.any(String),
     );
   });
 

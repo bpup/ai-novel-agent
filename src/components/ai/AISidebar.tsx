@@ -11,7 +11,8 @@ import { personaService } from "../../services/style/persona";
 import { getRegisteredSkills, setProjectSkill, getProjectSkillPath, clearProjectSkill } from "../../services/skill/loader";
 import type { PersonaProfile } from "../../types/novel";
 import type { ChatMessage } from "../../types/llm";
-import type { ChatSession } from "../../types/chat";
+import type { ChatSession, MentionTarget } from "../../types/chat";
+import { saveSession } from "../../services/ai/sessionStore";
 
 interface AISidebarProps {
   editor: Editor | null;
@@ -37,6 +38,8 @@ export default function AISidebar({ editor, projectId }: AISidebarProps) {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
+  const [refiningMessageId, setRefiningMessageId] = useState<number | null>(null);
+  const thinkingRef = useRef<string>("");
   const [personas] = useState<PersonaProfile[]>(() => personaService.getAll());
   const [activePersonaId, setActivePersonaId] = useState<string>(() => {
     const projectPersona = personaService.getForProject(projectId);
@@ -125,58 +128,136 @@ export default function AISidebar({ editor, projectId }: AISidebarProps) {
     [],
   );
 
-  const handleSend = useCallback(
+  const parseMentions = useCallback(
+    (content: string): { cleaned: string; mentions: MentionTarget[] } => {
+      const mentionRegex = /@(selection|project|chapter(?:\s+\S+)?)\s*/g;
+      const mentions: MentionTarget[] = [];
+      let cleaned = content.replace(mentionRegex, (match, token) => {
+        const resolved = contextBus.resolveMention(`@${token}`);
+        if (resolved) {
+          mentions.push(resolved);
+          return "";
+        }
+        return match;
+      });
+      cleaned = cleaned.trim();
+      return { cleaned, mentions };
+    },
+    [],
+  );
+
+  const streamResponse = useCallback(
     async (content: string, mode: ChatMode) => {
       const config = loadConfig();
       if (!config.apiKey && config.provider !== "ollama") {
         toast.error("请先在设置中配置 API Key");
-        return;
+        return null;
+      }
+
+      const { cleaned, mentions } = parseMentions(content);
+      if (!cleaned) return null;
+
+      let additionalContext = "";
+      if (mentions.length > 0) {
+        const hasProject = mentions.some((m) => m.kind === "project");
+        const hasChapter = mentions.some((m) => m.kind === "chapter");
+        const hasSelection = mentions.some((m) => m.kind === "selection");
+        if (hasSelection) getEditorContext();
+        additionalContext = contextBus.buildContextPrompt({
+          includeProject: hasProject,
+          includeChapter: hasChapter,
+          includeSelection: hasSelection,
+        });
+      } else if (mode === "chat") {
+        const { selectedText } = getEditorContext();
+        additionalContext = contextBus.buildContextPrompt({
+          includeProject: false,
+          includeChapter: true,
+          includeSelection: selectedText.length > 0,
+        });
       }
 
       const userMsg: ChatMessage = {
         role: "user",
-        content,
+        content: cleaned,
         timestamp: new Date().toISOString(),
       };
       const newMessages = [...messages, userMsg];
       setMessages(newMessages);
       setIsLoading(true);
+      thinkingRef.current = "";
+      setRefiningMessageId(null);
 
-      const handleError = (err: unknown) => {
+      try {
+        if (mode === "chat") {
+          let fullResponse = "";
+          setMessages(addAssistantMessage("", newMessages));
+
+          for await (const event of aiOrchestrator.streamChat(projectId, cleaned, additionalContext || undefined)) {
+            switch (event.type) {
+              case "thinking":
+                thinkingRef.current = event.text;
+                break;
+              case "token":
+                fullResponse += event.text;
+                setMessages(addAssistantMessage(fullResponse, newMessages));
+                break;
+              case "done": {
+                const finalMessage: ChatMessage = {
+                  role: "assistant",
+                  content: fullResponse || event.fullText,
+                  timestamp: new Date().toISOString(),
+                  metadata: { thinking: thinkingRef.current ? [thinkingRef.current] : undefined },
+                };
+                const finalMessages = [...newMessages, finalMessage];
+                setMessages(finalMessages);
+                saveSession(projectId, activeSessionId, finalMessages);
+                break;
+              }
+              case "error":
+                setMessages(addAssistantMessage(fullResponse || event.message, newMessages));
+                break;
+            }
+          }
+        } else if (mode === "continue") {
+          const response = await aiOrchestrator.continueWriting(projectId, cleaned);
+          const assistantMsg: ChatMessage = {
+            role: "assistant", content: response, timestamp: new Date().toISOString(),
+          };
+          const finalMessages = [...newMessages, assistantMsg];
+          setMessages(finalMessages);
+          saveSession(projectId, activeSessionId, finalMessages);
+        } else {
+          const response = await aiOrchestrator.brainstorm(projectId, cleaned);
+          const assistantMsg: ChatMessage = {
+            role: "assistant", content: response, timestamp: new Date().toISOString(),
+          };
+          const finalMessages = [...newMessages, assistantMsg];
+          setMessages(finalMessages);
+          saveSession(projectId, activeSessionId, finalMessages);
+        }
+        return "success";
+      } catch (err) {
         const errorMsg = err instanceof Error ? err.message : "未知错误";
         toast.error(`AI 请求失败：${errorMsg}`);
         setMessages(
           addAssistantMessage("请求失败，请检查网络连接或 API 配置后重试。", newMessages),
         );
-      };
-
-      try {
-        if (mode === "chat") {
-          let fullResponse = "";
-          setMessages(
-            addAssistantMessage("", newMessages),
-          );
-
-          for await (const chunk of aiOrchestrator.streamChat(projectId, content)) {
-            fullResponse += chunk;
-            setMessages(addAssistantMessage(fullResponse, newMessages));
-          }
-        } else if (mode === "continue") {
-          const response = await aiOrchestrator.continueWriting(projectId, content);
-          setMessages(addAssistantMessage(response, newMessages));
-        } else {
-          const response = await aiOrchestrator.brainstorm(projectId, content);
-          setMessages(addAssistantMessage(response, newMessages));
-        }
-      } catch (err) {
-        handleError(err);
+        return null;
       } finally {
         setIsLoading(false);
         setReferenceCount(aiOrchestrator.getLastReferenceCount(projectId));
         scrollToBottom();
       }
     },
-    [messages, projectId, scrollToBottom, addAssistantMessage],
+    [messages, projectId, scrollToBottom, addAssistantMessage, parseMentions, getEditorContext, activeSessionId],
+  );
+
+  const handleSend = useCallback(
+    async (content: string, mode: ChatMode) => {
+      await streamResponse(content, mode);
+    },
+    [streamResponse],
   );
 
   const handleQuickAction = useCallback(
@@ -194,11 +275,8 @@ export default function AISidebar({ editor, projectId }: AISidebarProps) {
           case "continue": {
             const contextText = selectedText || beforeText;
             const result = await aiOrchestrator.continueWriting(projectId, contextText);
-            if (selectedText) {
-              insertAtCursor(result);
-            } else {
-              replaceSelection(result);
-            }
+            editor.commands.setGhostText(result);
+            toast.success("已生成续写，按 Tab 接受 / Esc 取消");
             break;
           }
           case "polish": {
@@ -232,7 +310,7 @@ export default function AISidebar({ editor, projectId }: AISidebarProps) {
         setIsLoading(false);
       }
     },
-    [editor, isLoading, projectId, getEditorContext, insertAtCursor, replaceSelection],
+    [editor, isLoading, projectId, getEditorContext, toast],
   );
 
   const acceptSuggestion = useCallback(() => {
@@ -268,6 +346,10 @@ export default function AISidebar({ editor, projectId }: AISidebarProps) {
     },
     [projectId],
   );
+
+  const handleRefine = useCallback((messageIdx: number) => {
+    setRefiningMessageId(messageIdx);
+  }, []);
 
   const handleClearHistory = useCallback(() => {
     aiOrchestrator.clearHistory(projectId);
@@ -438,8 +520,16 @@ export default function AISidebar({ editor, projectId }: AISidebarProps) {
                 onInsertAtCursor={insertAtCursor}
                 onReplaceSelection={replaceSelection}
                 onAppendToEnd={appendToEnd}
+                refiningMessageId={refiningMessageId}
+                onRefine={handleRefine}
               />
               <div ref={messagesEndRef} />
+              {refiningMessageId !== null && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-subtle border-t border-amber/20">
+                  <span className="inline-block w-3 h-3 border border-amber border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-ink-text-dim">优化中...</span>
+                </div>
+              )}
               <ChatInput onSend={handleSend} disabled={isLoading} />
             </>
           )}
