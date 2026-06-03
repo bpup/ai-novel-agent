@@ -1,1 +1,1 @@
-{"default":{"identifier":"default","description":"Default capabilities for the AI Novel Agent app","local":true,"windows":["main"],"permissions":["sql:default","fs:default"]}}
+{"default":{"identifier":"default","description":"Default capabilities for the AI Novel Agent app","local":true,"windows":["main"],"permissions":["sql:default","sql:allow-execute","fs:default"]}}
