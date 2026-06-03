@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNovelContext } from "../contexts/NovelContext";
-import { chapterService } from "../services/project/manager";
+import { chapterService, projectManager } from "../services/project/manager";
 import { useToast } from "../components/common/Toast";
 import NovelEditor from "../components/editor/NovelEditor";
 import EditorToolbar from "../components/editor/EditorToolbar";
@@ -10,7 +10,10 @@ import OutlineView from "../components/editor/OutlineView";
 import ChapterNotes from "../components/editor/ChapterNotes";
 import ProjectOutline from "../components/editor/ProjectOutline";
 import SearchDialog from "../components/editor/SearchDialog";
+import ExportDialog from "../components/editor/ExportDialog";
+import ShortcutHelpDialog from "../components/editor/ShortcutHelpDialog";
 import AISidebar from "../components/ai/AISidebar";
+import AIErrorBoundary from "../components/ai/AIErrorBoundary";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 import { contextBus } from "../components/ai/orchestrator/ContextBus";
 import CharacterModal from "../components/character/CharacterModal";
@@ -18,6 +21,8 @@ import WorldSettingModal from "../components/world/WorldSettingModal";
 import { characterService } from "../services/character/service";
 import { worldSettingService } from "../services/world/service";
 import { ragEngine } from "../services/rag/engine";
+import { chapterVersionService } from "../services/version/service";
+import VersionHistoryDialog from "../components/editor/VersionHistoryDialog";
 import type { Character, WorldSetting, Chapter } from "../types/novel";
 import type { ChapterStatus } from "../types/chat";
 import type { Editor } from "@tiptap/react";
@@ -84,16 +89,29 @@ export default function Project() {
   });
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("chapters");
   const [showSearch, setShowSearch] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [worldSettings, setWorldSettings] = useState<WorldSetting[]>([]);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
   const [showWorldModal, setShowWorldModal] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   const [editingWorldSetting, setEditingWorldSetting] = useState<WorldSetting | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [descDraft, setDescDraft] = useState("");
+  const [aiSidebarKey, setAiSidebarKey] = useState(0);
   const newChapterTitleRef = useRef<HTMLInputElement>(null);
   const editorInstanceRef = useRef<Editor | null>(null);
+  const lastVersionSaveRef = useRef<number>(0);
 
   const project = state.projects.find((p) => p.id === projectId);
+
+  const selectedChapter = projectState.chapters.find(
+    (c) => c.id === projectState.selectedChapterId,
+  );
 
   useEffect(() => {
     if (projectId) {
@@ -124,14 +142,16 @@ export default function Project() {
   }, [projectId, project?.title, project?.description]);
 
   useEffect(() => {
+    if (selectedChapter) {
+      contextBus.setCurrentChapter(selectedChapter);
+    }
+  }, [selectedChapter]);
+
+  useEffect(() => {
     if (!projectId) return;
     characterService.getCharacters(projectId).then(setCharacters).catch(() => {});
     worldSettingService.getWorldSettings(projectId).then(setWorldSettings).catch(() => {});
   }, [projectId, projectState.chapters]);
-
-  const selectedChapter = projectState.chapters.find(
-    (c) => c.id === projectState.selectedChapterId,
-  );
 
   async function loadChapters() {
     if (!projectId) return;
@@ -302,7 +322,13 @@ export default function Project() {
       (c) => c.id === projectState.selectedChapterId,
     );
     if (!chapter) return;
-    chapterService.updateChapter(projectState.selectedChapterId, { content }).catch((err) => {
+    chapterService.updateChapter(projectState.selectedChapterId, { content }).then(() => {
+      const now = Date.now();
+      if (now - lastVersionSaveRef.current > 300000) {
+        lastVersionSaveRef.current = now;
+        chapterVersionService.saveVersion(chapter.id, chapter.title, content).catch(() => {});
+      }
+    }).catch((err) => {
       console.error("Auto-save failed:", err);
     });
   }
@@ -341,6 +367,45 @@ export default function Project() {
     }
   }
 
+  function handleSaveTitle() {
+    if (!projectId || !project || !titleDraft.trim()) return;
+    projectManager.updateProject(projectId, { title: titleDraft.trim() }).then(() => {
+      dispatch({
+        type: "UPDATE_PROJECT",
+        project: { ...project, title: titleDraft.trim() },
+      });
+    }).catch(() => {});
+    setEditingTitle(false);
+  }
+
+  function handleSaveDescription() {
+    if (!projectId || !project) return;
+    projectManager.updateProject(projectId, { description: descDraft.trim() }).then(() => {
+      dispatch({
+        type: "UPDATE_PROJECT",
+        project: { ...project, description: descDraft.trim() },
+      });
+    }).catch(() => {});
+    setEditingDescription(false);
+  }
+
+  async function handleVersionRestore(_title: string, content: string) {
+    if (!projectState.selectedChapterId) return;
+    // Only restore content, keep current title
+    try {
+      await chapterService.updateChapter(projectState.selectedChapterId, { content });
+      projectDispatch({
+        type: "UPDATE_CHAPTER",
+        chapterId: projectState.selectedChapterId,
+        updates: { content },
+      });
+      toast.success("版本已恢复");
+    } catch (err) {
+      console.error("Failed to restore version:", err);
+      toast.error("版本恢复失败");
+    }
+  }
+
   const handleOutlineReorder = useCallback(
     (_headings: Array<{ level: number; text: string }>) => {},
     [],
@@ -366,13 +431,44 @@ export default function Project() {
   return (
     <div className="flex h-full">
       <div className="w-52 border-r border-ink-border bg-ink-surface flex flex-col shrink-0">
-        <div className="p-2 border-b border-ink-border">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xs font-semibold text-ink-text-dim truncate font-(family-name:--font-ui)">
+        <div className="p-2 border-b border-ink-border space-y-1">
+          {editingTitle ? (
+            <input
+              ref={(el) => el?.focus()}
+              defaultValue={project?.title ?? ""}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={handleSaveTitle}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+              className="w-full px-1.5 py-0.5 text-xs bg-ink-surface-raised border border-amber/40 rounded text-ink-text font-(family-name:--font-ui) focus:outline-none"
+            />
+          ) : (
+            <button type="button"
+              onClick={() => { setTitleDraft(project?.title ?? ""); setEditingTitle(true); }}
+              className="w-full text-left text-xs font-semibold text-ink-text-dim truncate font-(family-name:--font-ui) cursor-pointer hover:text-ink-text transition-ink"
+              title="点击编辑项目标题"
+            >
               {project?.title ?? "未命名项目"}
-            </h2>
-          </div>
-          <div className="flex gap-1 mb-2">
+            </button>
+          )}
+          {editingDescription ? (
+            <input
+              ref={(el) => el?.focus()}
+              defaultValue={project?.description ?? ""}
+              onChange={(e) => setDescDraft(e.target.value)}
+              onBlur={handleSaveDescription}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveDescription()}
+              className="w-full px-1.5 py-0.5 text-[10px] bg-ink-surface-raised border border-amber/40 rounded text-ink-text-dim font-(family-name:--font-ui) focus:outline-none"
+            />
+          ) : project?.description ? (
+            <button type="button"
+              onClick={() => { setDescDraft(project.description ?? ""); setEditingDescription(true); }}
+              className="w-full text-left text-[10px] text-ink-text-subtle truncate cursor-pointer hover:text-ink-text-dim transition-ink"
+              title="点击编辑项目描述"
+            >
+              {project.description}
+            </button>
+          ) : null}
+          <div className="flex gap-1">
             <input
               ref={newChapterTitleRef}
               type="text"
@@ -487,7 +583,13 @@ export default function Project() {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 relative">
-        <EditorToolbar editor={editorInstanceRef.current} onSearchClick={() => setShowSearch(true)} />
+        <EditorToolbar
+          editor={editorInstanceRef.current}
+          onSearchClick={() => setShowSearch(true)}
+          onExportClick={() => setShowExport(true)}
+          onShortcutHelpClick={() => setShowShortcutHelp(true)}
+          onVersionHistoryClick={() => setShowVersionHistory(true)}
+        />
         {showSearch && projectId && (
           <SearchDialog
             projectId={projectId}
@@ -504,6 +606,7 @@ export default function Project() {
                 onContentChange={handleContentChange}
                 onAutoSave={handleAutoSave}
                 onEditorReady={handleEditorReady}
+                wordGoal={selectedChapter.wordGoal}
               />
             </ErrorBoundary>
           ) : (
@@ -522,17 +625,37 @@ export default function Project() {
         </div>
 
         {projectId && (
-          <ErrorBoundary>
+          <AIErrorBoundary key={aiSidebarKey} onRetry={() => setAiSidebarKey((k) => k + 1)}>
             <AISidebar
               editor={editorInstanceRef.current}
               projectId={projectId}
             />
-          </ErrorBoundary>
+          </AIErrorBoundary>
         )}
         <CharacterModal isOpen={showCharacterModal} onClose={() => { setShowCharacterModal(false); setEditingCharacter(null); }}
           onSave={handleSaveCharacter} character={editingCharacter} />
         <WorldSettingModal isOpen={showWorldModal} onClose={() => { setShowWorldModal(false); setEditingWorldSetting(null); }}
           onSave={handleSaveWorldSetting} worldSetting={editingWorldSetting} />
+        {showExport && projectState.chapters.length > 0 && (
+          <ExportDialog
+            projectTitle={project?.title ?? "未命名项目"}
+            chapters={projectState.chapters}
+            selectedChapterId={projectState.selectedChapterId}
+            onClose={() => setShowExport(false)}
+          />
+        )}
+        {showShortcutHelp && (
+          <ShortcutHelpDialog onClose={() => setShowShortcutHelp(false)} />
+        )}
+        {showVersionHistory && selectedChapter && (
+          <VersionHistoryDialog
+            chapterId={selectedChapter.id}
+            currentTitle={selectedChapter.title}
+            currentContent={selectedChapter.content}
+            onRestore={handleVersionRestore}
+            onClose={() => setShowVersionHistory(false)}
+          />
+        )}
       </div>
     </div>
   );

@@ -105,6 +105,11 @@
   --error: #b55a4d;
   --error-bg: rgba(181, 90, 77, 0.12);
 
+  /* ── Progress colors ── */
+  --progress-bar-bg: #3d3730;
+  --progress-bar-fill: #5a8f6c;
+  --progress-bar-fill-warn: #c4943b;
+
   /* ── Typography ── */
   --font-display: "Playfair Display", "Georgia", "Times New Roman", serif;
   --font-body: "Crimson Text", "Georgia", "Times New Roman", serif;
@@ -133,6 +138,51 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
   --shadow-glow: 0 0 20px rgba(196, 149, 59, 0.15);
+}
+
+/* Light theme overrides — applied via .light-theme on <html> */
+html.light-theme {
+  --ink-bg: #f5f0e8;
+  --ink-surface: #ede8dd;
+  --ink-surface-raised: #e5dfd3;
+  --ink-surface-hover: #ddd6c9;
+  --ink-border: #ccc4b7;
+  --ink-border-focus: #a09070;
+
+  --paper-bg: #faf8f4;
+  --paper-bg-off: #f5f0e8;
+  --paper-text: #2c2418;
+  --paper-text-dim: #7a7265;
+  --paper-border: #ddd8ce;
+
+  --ink-text: #2c2418;
+  --ink-text-dim: #7a7265;
+  --ink-text-subtle: #a09888;
+
+  --amber: #b8860b;
+  --amber-hover: #a07800;
+  --amber-dim: #9a8040;
+  --amber-subtle: rgba(184, 134, 11, 0.10);
+
+  --sage: #5a7d6c;
+  --sage-hover: #4d6e5e;
+  --sage-subtle: rgba(90, 125, 108, 0.10);
+
+  --success: #4a7d5c;
+  --success-bg: rgba(74, 125, 92, 0.10);
+  --warning: #a08030;
+  --warning-bg: rgba(160, 128, 48, 0.10);
+  --error: #a05040;
+  --error-bg: rgba(160, 80, 64, 0.10);
+
+  --progress-bar-bg: #d5cec2;
+  --progress-bar-fill: #4a7d5c;
+  --progress-bar-fill-warn: #a08030;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px rgba(184, 134, 11, 0.12);
 }
 
 /* ==========================================================================

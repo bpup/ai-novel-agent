@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const host = "172.19.208.102";
+const host = "localhost";
 
 export default defineConfig(async () => ({
   plugins: [react()],

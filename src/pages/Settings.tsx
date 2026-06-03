@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadConfig, saveConfig } from "../services/llm/config";
 import { getRegisteredSkills } from "../services/skill/loader";
+import { loadPromptTemplates, savePromptTemplates } from "../services/settings/promptTemplates";
 import type { LLMConfig } from "../types/llm";
 import type { SkillMeta } from "../types/skill";
+import type { PromptTemplates } from "../services/settings/promptTemplates";
 
 interface StoredSkill {
   filePath: string;
@@ -32,6 +34,7 @@ export default function Settings() {
   const [skills, setSkills] = useState<StoredSkill[]>([]);
   const [saved, setSaved] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [promptTemplates, setPromptTemplates] = useState<PromptTemplates>(loadPromptTemplates);
 
   useEffect(() => {
     setSkills(getRegisteredSkills());
@@ -43,6 +46,7 @@ export default function Settings() {
 
   function handleSave() {
     saveConfig(config);
+    savePromptTemplates(promptTemplates);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -151,6 +155,36 @@ export default function Settings() {
               )}
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-ink-text mb-4">AI 提示词模板</h2>
+        <div className="bg-ink-surface rounded-lg border border-ink-border p-5 space-y-4">
+          <div>
+            <label htmlFor="system-prompt" className="block text-sm font-medium text-ink-text-dim mb-1">
+              系统提示词
+            </label>
+            <textarea
+              id="system-prompt"
+              value={promptTemplates.systemPrompt}
+              onChange={(e) => setPromptTemplates((prev) => ({ ...prev, systemPrompt: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 bg-ink-surface-raised border border-ink-border rounded-lg text-sm text-ink-text placeholder:text-ink-text-subtle focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber resize-y"
+            />
+          </div>
+          <div>
+            <label htmlFor="writing-instructions" className="block text-sm font-medium text-ink-text-dim mb-1">
+              写作指令
+            </label>
+            <textarea
+              id="writing-instructions"
+              value={promptTemplates.writingInstructions}
+              onChange={(e) => setPromptTemplates((prev) => ({ ...prev, writingInstructions: e.target.value }))}
+              rows={2}
+              className="w-full px-3 py-2 bg-ink-surface-raised border border-ink-border rounded-lg text-sm text-ink-text placeholder:text-ink-text-subtle focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber resize-y"
+            />
+          </div>
         </div>
       </section>
 
