@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import { MIGRATIONS, checkSchemaVersion } from "../database";
 
 describe("Migration definitions", () => {
-  it("MIGRATIONS should have versions [1, 2, 3]", () => {
-    expect(MIGRATIONS).toHaveLength(3);
+  it("MIGRATIONS should have versions [1, 2, 3, 4]", () => {
+    expect(MIGRATIONS).toHaveLength(4);
     expect(MIGRATIONS[0].version).toBe(1);
     expect(MIGRATIONS[1].version).toBe(2);
     expect(MIGRATIONS[2].version).toBe(3);
+    expect(MIGRATIONS[3].version).toBe(4);
   });
 
   it("MIGRATIONS should be sorted ascending", () => {
@@ -38,6 +39,16 @@ describe("Migration definitions", () => {
     const v3 = MIGRATIONS.find((m) => m.version === 3);
     expect(v3).toBeDefined();
     expect(v3!.sql).toHaveLength(0);
+  });
+
+  it("v4 migration should create chapter_versions table", () => {
+    const v4 = MIGRATIONS.find((m) => m.version === 4);
+    expect(v4).toBeDefined();
+    expect(v4!.sql).toHaveLength(1);
+    expect(v4!.sql[0]).toContain("CREATE TABLE IF NOT EXISTS chapter_versions");
+    expect(v4!.sql[0]).toContain("chapter_id TEXT NOT NULL");
+    expect(v4!.sql[0]).toContain("content TEXT NOT NULL");
+    expect(v4!.sql[0]).toContain("saved_at TEXT NOT NULL");
   });
 });
 

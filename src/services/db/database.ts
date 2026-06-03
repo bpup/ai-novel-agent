@@ -109,6 +109,21 @@ export const MIGRATIONS: Migration[] = [
     version: 3,
     sql: [],
   },
+  {
+    version: 4,
+    sql: [
+      `CREATE TABLE IF NOT EXISTS chapter_versions (
+        id TEXT PRIMARY KEY,
+        chapter_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        word_count INTEGER DEFAULT 0,
+        description TEXT DEFAULT '',
+        saved_at TEXT NOT NULL,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+      )`,
+    ],
+  },
 ];
 
 export async function checkSchemaVersion(database: Database): Promise<number> {
