@@ -46,15 +46,7 @@
   },
   "plugins": {
     "sql": {
-      "preload": {
-        "db": "sqlite:ai_novel_agent.db"
-      }
-    },
-    "fs": {
-      "scope": {
-        "allow": ["$APPDATA/**"],
-        "deny": []
-      }
+      "preload": ["sqlite:ai_novel_agent.db"]
     }
   }
 }
